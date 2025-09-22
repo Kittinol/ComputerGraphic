@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>Vertex Shader • Sphere Wave (three.js r128)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    canvas { display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+  // --- Scene / Camera / Renderer ---
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 3); // มองเห็น sphere ทั้งลูก
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  document.body.appendChild(renderer.domElement);
+
+  new THREE.OrbitControls(camera, renderer.domElement);
+
+  // --- Uniforms ---
+  const uniforms = {
+    uTime: { value: 0.0 }
+  };
+
+  // --- Vertex Shader ---
+  const vert = `
+    uniform float uTime;
+    varying vec3 vNormal;
+
+    void main() {
+      vec3 pos = position;
+      vec3 N = normalize(normal);
+
+      // ปรับความสูงของ vertex ตาม wave
+      pos += N * (sin(pos.y * 5.0 + uTime * 2.0) * 0.1);
+
+      vNormal = normal;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `;
+
+  // --- Fragment Shader ---
+  const frag = `
+    precision mediump float;
+    varying vec3 vNormal;
+
+    void main() {
+      vec3 baseColor = vec3(0.2, 0.8, 1.0);
+      gl_FragColor = vec4(baseColor, 1.0);
+    }
+  `;
+
+  // --- Geometry & Material (Sphere) ---
+  const geo = new THREE.SphereBufferGeometry(1, 64, 64); // ทรงกลมขนาด 1, รายละเอียดสูง
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: vert,
+    fragmentShader: frag,
+    uniforms: uniforms,
+    side: THREE.DoubleSide,
+    wireframe: true // แสดงโครงสร้างแบบลวด
+  });
+
+  const sphere = new THREE.Mesh(geo, mat);
+  scene.add(sphere);
+
+  // --- Handle Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // --- Render Loop ---
+  function loop() {
+    uniforms.uTime.value = performance.now() / 1000; // เพิ่มเวลาต่อเนื่อง
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+
+  loop(); // เริ่มการวนลูป
+</script>
+</body>
+</html>

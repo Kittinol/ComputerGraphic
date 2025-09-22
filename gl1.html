@@ -1,0 +1,51 @@
+<canvas width="300" height="300" id="canvas"></canvas>
+<script>
+    const canvas = document.getElementById("canvas");
+    const gl = canvas.getContext("webgl");
+    // (x, y, r, g, b)
+    const vertices = new Float32Array([
+        0.0, 0.5, 1.0, 0.0, 0.0,
+        -0.5, -0.5, 0.0, 1.0, 0.0,
+        0.5, -0.5, 0.0, 0.0, 1.0
+    ]);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    const vs = `
+attribute vec2 aPos;
+attribute vec3 aColor;
+varying vec3 vColor;
+void main() {
+gl_Position = vec4(aPos, 0.0, 1.0);
+vColor = aColor;
+}
+`;
+    const fs = `
+precision mediump float;
+varying vec3 vColor;
+void main() {
+gl_FragColor = vec4(vColor, 1.0);
+}
+`;
+    function createShader(type, src) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
+        return shader;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, createShader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, createShader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    const FSIZE = vertices.BYTES_PER_ELEMENT;
+    const aPos = gl.getAttribLocation(prog, 'aPos');
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, FSIZE * 5, 0);
+    gl.enableVertexAttribArray(aPos);
+    const aColor = gl.getAttribLocation(prog, 'aColor');
+    gl.vertexAttribPointer(aColor, 3, gl.FLOAT, false, FSIZE * 5, FSIZE * 2);
+    gl.enableVertexAttribArray(aColor);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>

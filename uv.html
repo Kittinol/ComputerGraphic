@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>UV</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- core three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // ✅ เปิดใช้งานเงา!
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+
+        // ✅ กล้อง
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.set(0, 2, 5);
+        camera.lookAt(0, 0, 0);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x808080); // แสงสว่างทั่วไป
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffeedd, 0.9); // แสงทิศทาง
+        directionalLight.position.set(10, 5, 10);
+        directionalLight.castShadow = true; // ✅ แสงนี้สร้างเงา
+        scene.add(directionalLight);
+
+
+/* Auto-exported from Blender */
+const vertices = [
+  -0.5, 0.5, 1.0, 0.5, -0.5, 1.0, 0.5, 0.5, 1.0, 0.5, -0.5, 1.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0, -0.5, -0.5, 1.0, -0.5, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, -0.5, 0.0, -0.5, 0.5, 0.0, 0.5, 0.5, 1.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 1.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0, -0.5, 0.5, 1.0, -0.5, -0.5, 1.0, 0.5, -0.5, 1.0, 0.5, -0.5, 1.0, -0.5, -0.5, 1.0, -0.5, -0.5, 0.0, -0.5, -0.5, 1.0, -0.5, 0.5, 1.0, -0.5, 0.5, 0.0, 0.5, 0.5, 0.0, 0.5, -0.5, 0.0, -0.5, -0.5, 0.0, 0.5, 0.5, 1.0, 0.5, -0.5, 1.0, 0.5, -0.5, 0.0, -0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5, 0.5, 0.0
+];
+
+const uvs = [
+  1.003077, 0.999411, -0.003077, 0.000589, -0.001894, 1.000588, 0.991543, 0.009275, 0.013379, 0.997569, 0.008314, 0.01434, 0.995281, 0.002712, -0.000202, 0.997827, -0.000202, 0.002712, 1.019592, 0.025202, -0.037279, 1.082073, -0.037279, 0.025202, 1.004273, 1.003774, -0.004273, -0.019538, 1.011656, -0.012155, 1.010931, 1.018946, -0.010931, -0.008103, 1.013524, -0.005509, 1.003077, 0.999411, 1.001894, -0.000588, -0.003077, 0.000589, 0.991543, 0.009275, 0.996608, 0.992504, 0.013379, 0.997569, 0.995281, 0.002712, 0.995281, 0.997827, -0.000202, 0.997827, 1.019592, 0.025202, 1.019592, 1.082073, -0.037279, 1.082073, 1.004273, 1.003774, -0.011656, 0.99639, -0.004273, -0.019538, 1.010931, 1.018946, -0.013524, 1.016353, -0.010931, -0.008103
+];
+
+
+        // 1) สร้าง BufferGeometry แบบ non-indexed
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        geom.computeVertexNormals();
+
+        const tex = new THREE.TextureLoader().load('https://sibsansuk.github.io/smile.png', t => {
+            t.encoding = THREE.sRGBEncoding;
+        });
+        const mat = new THREE.MeshStandardMaterial({
+            map: tex
+        });
+
+        // 3) ใส่เพิ่มในฉาก
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+
+
+        const loader = new THREE.OBJLoader();
+        loader.load('https://sibsansuk.github.io/chair.obj', function (object) {
+            object.castShadow = true; // ✅ วัตถุนี้สร้างเงา
+            // ตั้งค่า castShadow กับทุก mesh ใน object
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xffffff
+                    });
+                }
+            });
+            scene.add(object);
+        }, undefined, function (error) {
+            console.error('Error loading OBJ:', error);
+        });
+
+
+        // ✅ render loop
+        function animate(t) {
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate(0);
+
+        window.addEventListener('keydown', (event) => {
+
+        });
+
+    </script>
+</body>
+
+</html>
